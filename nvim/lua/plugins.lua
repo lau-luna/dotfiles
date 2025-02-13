@@ -1,4 +1,3 @@
-
 require('lazy').setup({
     -- Plugin para el árbol de archivos
     {
@@ -16,11 +15,10 @@ require('lazy').setup({
         version = '*',
         opts = {
             keymap = {
-                -- Usa 'ctrl-k' para abrir el autocompletado y 'ctrl-f' para confirmar selección
                 custom = {
-                    ["<C-k>"] = "next_item",  -- Navegar hacia abajo en la lista
-                    ["<C-S-k>"] = "prev_item", -- Navegar hacia arriba
-                    ["<C-f>"] = "confirm"  -- Confirmar la selección
+                    ["<C-k>"] = "next_item",
+                    ["<C-S-k>"] = "prev_item",
+                    ["<C-f>"] = "confirm"
                 }
             },
             appearance = {
@@ -49,6 +47,22 @@ require('lazy').setup({
                 config.capabilities = require('blink.cmp').get_lsp_capabilities(config.capabilities)
                 lspconfig[server].setup(config)
             end
+        end
+    },
+
+    -- Bufferline para tabs estilo VSCode
+    {
+        'akinsho/bufferline.nvim',
+        version = "*",
+        dependencies = 'nvim-tree/nvim-web-devicons',
+        config = function()
+            require("bufferline").setup{
+                options = {
+                    diagnostics = "nvim_lsp",
+                    separator_style = "slant",
+                    always_show_bufferline = true
+                }
+            }
         end
     }
 })

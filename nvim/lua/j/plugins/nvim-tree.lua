@@ -4,57 +4,58 @@ return {
 		"nvim-tree/nvim-web-devicons"
 	},
 	config = function()
+		-- Deshabilitar netrw para evitar conflictos
 		vim.g.loaded_netrw = 1
 		vim.g.loaded_netrwPlugin = 1
 
-		-- optionally enable 24-bit colour
+		-- Habilitar colores de 24 bits
 		vim.opt.termguicolors = true
 
-		-- empty setup using defaults
-		require("nvim-tree").setup()
-
-		-- OR setup with some options
+		-- Configuración de nvim-tree
 		require("nvim-tree").setup({
-		  sort = {
-		    sorter = "case_sensitive",
-		  },
-		  view = {
-		    width = 30,
-		  },
-		  renderer = {
-		    group_empty = true,
-		  },
-		  filters = {
-		    dotfiles = true,
-		  },
-		})
-
-		require("nvim-tree").setup({
-		  renderer = {
-		    icons = {
-		      show = {
-			git = true,
-			file = false,
-			folder = false,
-			folder_arrow = true,
-		      },
-		      glyphs = {
-			folder = {
-			  arrow_closed = "⏵",
-			  arrow_open = "⏷",
+			sort = {
+				sorter = "case_sensitive",
 			},
-			git = {
-			  unstaged = "✗",
-			  staged = "✓",
-			  unmerged = "⌥",
-			  renamed = "➜",
-			  untracked = "★",
-			  deleted = "⊖",
-			  ignored = "◌",
+			view = {
+				width = 30,
 			},
-		      },
-		    },
-		  },
+			renderer = {
+				group_empty = true,
+				icons = {
+					show = {
+						git = true,
+						file = true,  -- Mostrar íconos de archivos
+						folder = true,  -- Mostrar íconos de carpetas
+						folder_arrow = true,
+					},
+					glyphs = {
+						default = "", -- Ícono por defecto para archivos
+						symlink = "",
+						folder = {
+							arrow_closed = "",
+							arrow_open = "",
+							default = "",
+							open = "",
+							empty = "",
+							empty_open = "",
+							symlink = "",
+							symlink_open = "",
+						},
+						git = {
+							unstaged = "✗",
+							staged = "✓",
+							unmerged = "",
+							renamed = "➜",
+							untracked = "★",
+							deleted = "⊖",
+							ignored = "◌",
+						},
+					},
+				},
+			},
+			filters = {
+				dotfiles = true, -- Ocultar archivos ocultos
+			},
 		})
 	end
 }
