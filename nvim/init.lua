@@ -28,6 +28,9 @@ vim.opt.relativenumber = true
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 2
 vim.opt.tabstop = 2
+vim.opt.smartindent = true
+vim.opt.expandtab = true
+vim.opt.virtualedit = "onemore"
 
 -- Atajos de teclado
 local map = vim.api.nvim_set_keymap
@@ -60,8 +63,7 @@ vim.keymap.set('n', '<leader>fg', telescope.live_grep, {})
 vim.keymap.set('n', '<leader>fb', telescope.buffers, {})
 vim.keymap.set('n', '<leader>fh', telescope.help_tags, {})
 
--- Treesitter
-require('nvim-treesitter.configs').setup {
-  ensure_installed = { "html", "javascript", "css" },
-  highlight = { enable = true },
-}
+
+vim.cmd("filetype plugin indent on")
+
+vim.keymap.set("n", "<leader>f", vim.lsp.buf.format, { desc = "Formatear código" })
