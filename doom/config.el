@@ -166,3 +166,8 @@
   (setq org-tags-column -80)
    ;; ... other org configuration here
 )
+
+
+(setenv "GTK_IM_MODULE" "fcitx")
+(setenv "QT_IM_MODULE" "fcitx")
+(setenv "XMODIFIERS" "@im=fcitx")

@@ -26,8 +26,12 @@ vim.opt.clipboard = 'unnamedplus'
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.expandtab = true
-vim.opt.shiftwidth = 2
-vim.opt.tabstop = 2
+vim.opt.shiftwidth = 4
+vim.opt.tabstop = 4
+vim.opt.softtabstop = 4    -- Hace que la tecla "Tab" inserte 4 espacios
+vim.opt.expandtab = true   -- Usa espacios en lugar de tabs
+vim.opt.autoindent = true  -- Mantiene la indentación de la línea anterior
+vim.opt.smartindent = true -- Indenta automáticamente según el contexto
 
 -- Atajos de teclado
 local map = vim.api.nvim_set_keymap
