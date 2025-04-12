@@ -69,3 +69,8 @@ require('nvim-treesitter.configs').setup {
   ensure_installed = { "html", "javascript", "css" },
   highlight = { enable = true },
 }
+
+-- Formatear el archivo actual con LSP
+vim.keymap.set("n", "<leader>f", function()
+  vim.lsp.buf.format({ async = true })
+end, { noremap = true, silent = true, desc = "Format current buffer" })
