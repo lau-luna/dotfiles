@@ -1,3 +1,8 @@
+-- justo al inicio del archivo, antes de cargar plugins:
+vim.g.vimtex_view_method = 'zathura'
+vim.g.vimtex_view_general_viewer = '/usr/bin/zathura'
+vim.g.vimtex_view_general_options = '--fork --synctex-forward @line:@col:@tex @pdf'
+
 -- Configuración general
 vim.g.mapleader = ' '
 
@@ -55,7 +60,8 @@ map('n', '<Tab>', ':BufferLineCycleNext<CR>', opts)
 map('n', '<S-Tab>', ':BufferLineCyclePrev<CR>', opts)
 map('n', '<leader>bd', ':bdelete<CR>', opts)
 
-
+-- Mapea <Leader>v para guardar y compilar LaTeX
+vim.api.nvim_set_keymap('n', '<Leader>v', ':w<CR>:VimtexCompile<CR>', { noremap = true, silent = true })
 
 -- Telescope
 local telescope = require('telescope.builtin')

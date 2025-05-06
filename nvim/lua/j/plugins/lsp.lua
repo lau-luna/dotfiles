@@ -6,7 +6,7 @@ return {
         local mason_lspconfig = require("mason-lspconfig")
 
         mason_lspconfig.setup({
-            ensure_installed = { "jdtls", "lua_ls" },
+            ensure_installed = { "jdtls", "lua_ls", "texlab" },
             automatic_installation = true,
         })
 
@@ -20,6 +20,26 @@ return {
             end,
         })
 
+        -- Configuración de texlab
+        lspconfig.texlab.setup({
+            settings = {
+                texlab = {
+                    build = {
+                        onSave = false,
+                        forwardSearchAfter = false,
+                    },
+                    forwardSearch = {
+                        executable = "zathura",  -- Ajusta esto si usas otro visor
+                    },
+                    formatterLineLength = 80,
+                    latexFormatter = "latexindent",  -- Especificamos latexindent como formateador
+                    latexindent = {
+                        modifyLineBreaks = true,  -- Mejora el manejo de saltos de línea
+                    },
+                }
+            }
+        })
+        
         -- Configuración manual para TypeScript
         lspconfig.tsserver.setup({})
     end,

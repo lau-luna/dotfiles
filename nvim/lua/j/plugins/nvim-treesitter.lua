@@ -7,7 +7,7 @@ return {
         configs.setup({
             ensure_installed = {
                 "c", "lua", "vim", "vimdoc", "rust", "go", "cpp",
-                "javascript", "html", "php" -- agregamos php acá
+                "javascript", "html", "php", "latex"  -- Agregar 'latex' aquí
             },
             sync_install = false,
             highlight = { enable = true },

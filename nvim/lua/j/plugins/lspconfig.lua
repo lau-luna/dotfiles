@@ -12,5 +12,18 @@ return {
 
 		-- O si preferís usar phpactor:
 		-- lspconfig.phpactor.setup {}
+
+   -- Configuración de texlab
+        lspconfig.texlab.setup({
+            settings = {
+                texlab = {
+                    build = {
+                        executable = 'latexmk',
+                        args = {'-pdf', '-interaction=nonstopmode', '-synctex=2', '%f'},
+                        forwardSearchAfter = false,
+                    },
+                },
+            },
+        })
 	end
 }
