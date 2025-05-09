@@ -115,5 +115,51 @@ You can install **Tex Live** via your system's package manager:
 
 - For **Arch** (full installation):
   ```bash
-  sudo apt install texlive-full
+  sudo pacman -S texlive-full
+  ```
+
+### 📄 Installing Zathura (PDF viewer)
+
+When you compile LaTex with <leader>v, it opens a zathura window with your project PDF.
+
+You can install **zathura** via your system's package manager:
+
+- For **Ubuntu/Debian**:
+  ```bash
+  sudo apt install zathura zathura-pdf-poppler
+  ```
+
+- For **Arch**:
+  ```bash
+  sudo pacman -S zathura zathura-pdf-poppler
+  ```
+
+### Dependencies for Telescope and Treesitter
+
+#### 📡 Telescope
+
+Telescope requires the following binaries:
+
+- For **Ubuntu/Debian**:
+  ```bash
+  sudo apt install ripgrep fd-find
+  ```
+
+- For **Arch**:
+  ```bash
+  sudo pacman -S ripgrep fd-find
+  ```
+
+#### 🌲 Treesitter
+
+Treesitter automatically installs its parsers, but it needs build tools:
+
+- For **Ubuntu/Debian**:
+  ```bash
+  sudo apt install build-essential ninja-build
+  ```
+
+- For **Arch**:
+  ```bash
+  sudo pacman -S build-essential ninja-build
   ```
