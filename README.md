@@ -100,7 +100,7 @@ sudo npm install -g intelephense
 You can install **Tex Live** via your system's package manager:
 - For **Ubuntu/Debian** (only the necessary packages):
   ```bash
-  sudo apt install texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
+  sudo apt install texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-science
   ```
 
 - For **Ubuntu/Debian** (full installation):
@@ -110,7 +110,7 @@ You can install **Tex Live** via your system's package manager:
 
 - For **Arch** (only the necessary packages):
   ```bash
-  sudo pacman -S texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
+  sudo pacman -S texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-science
   ```
 
 - For **Arch** (full installation):
