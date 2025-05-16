@@ -80,3 +80,24 @@ require('nvim-treesitter.configs').setup {
 vim.keymap.set("n", "<leader>f", function()
   vim.lsp.buf.format({ async = true })
 end, { noremap = true, silent = true, desc = "Format current buffer" })
+
+-- Desactivar Tree-sitter para LaTeX
+require'nvim-treesitter.configs'.setup {
+  ensure_installed = {"latex"},
+  highlight = {
+    enable = false, -- Desactiva el resaltado de sintaxis con Tree-sitter
+  },
+}
+
+-- Configuración de texlab para que use latexindent para el formateo
+require'lspconfig'.texlab.setup {
+  settings = {
+    texlab = {
+      latexFormatter = "latexindent", -- Asegúrate de usar latexindent como formateador
+      latexindent = {
+        modifyLineBreaks = false, -- Ajusta según tus preferencias
+      },
+      -- Otras configuraciones de texlab que puedas necesitar
+    },
+  },
+}

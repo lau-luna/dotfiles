@@ -7,6 +7,11 @@ return {
       require'lspconfig'.texlab.setup{
         settings = {
           texlab = {
+            latexFormatter = "latexindent",  -- Usar latexindent como formateador
+            latexindent = {
+              modifyLineBreaks = false,  -- Desactivar la modificación automática de saltos de línea
+              customArgs = {'-l', '.latexindent.yaml'},  -- Usar un archivo .latexindent.yaml personalizado
+            },
             build = {
               executable = 'latexmk',
               args = {'-pdf', '-interaction=nonstopmode', '-synctex=2', '%f'},
@@ -18,7 +23,7 @@ return {
     end
   },
 
-  -- Complemento para LaTeX (vimtex)
+  -- Complemento para vimtex
   {
     'lervag/vimtex',  -- URL correcta de vimtex
     config = function()
@@ -29,7 +34,7 @@ return {
     end
   },
 
-  -- Complemento para el resaltado de sintaxis
+  -- Complemento para el resaltado de sintaxis (Desactivado para LaTeX)
   {
     'nvim-treesitter/nvim-treesitter',
     run = ':TSUpdate',  -- Asegúrate de que tienes los últimos árboles de sintaxis
@@ -37,8 +42,7 @@ return {
       require'nvim-treesitter.configs'.setup {
         ensure_installed = { "latex" },  -- Asegúrate de que Latex esté incluido
         highlight = {
-          enable = true,
-          disable = {},  -- Desactiva para lenguajes específicos si es necesario
+          enable = false,  -- Desactiva el resaltado de sintaxis con Tree-sitter
         },
       }
     end
