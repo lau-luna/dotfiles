@@ -38,7 +38,7 @@ Personal configuration files for Neovim and development environments. Designed f
 Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/dotfiles ~/.dotfiles
+git clone https://github.com/lau-luna/dotfiles ~/.dotfiles
 cd ~/.dotfiles
 ```
 
@@ -79,7 +79,8 @@ Make sure you have the following installed:
 - **Git**
 - **Node.js and npm**
 - **Java JDK** (for Java LSP)
-
+- **Tex Live** (LaTeX compiler)
+  
 ### 🌐 LSP Servers and Tools
 
 ### 🖥️ Installing vscode-langservers-extracted (HTML LSP)
@@ -94,28 +95,71 @@ sudo npm install -g vscode-langservers-extracted
 sudo npm install -g intelephense
 ```
 
-### 🖥️ Installing jdtls (Java LSP)
+### 🖥️ Installing Tex Live (LaTeX compiler)
 
-You can install **jdtls** (Java Development Tools Language Server) in two ways:
+You can install **Tex Live** via your system's package manager:
+- For **Ubuntu/Debian** (only the necessary packages):
+  ```bash
+  sudo apt install texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-science
+  ```
 
-#### 1. Using Mason.nvim (Recommended)
-If you use `mason.nvim`, you can install `jdtls` easily:
+- For **Ubuntu/Debian** (full installation):
+  ```bash
+  sudo apt install texlive-full
+  ```
 
-1. Add `mason.nvim` to your config if you haven't yet.
-2. Run `:MasonInstall jdtls` in Neovim to install it.
+- For **Arch** (only the necessary packages):
+  ```bash
+  sudo pacman -S texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-science
+  ```
 
-#### 2. Using Your Distro's Package Manager
+- For **Arch** (full installation):
+  ```bash
+  sudo pacman -S texlive-full
+  ```
 
-You can also install **jdtls** via your system's package manager:
+### 📄 Installing Zathura (PDF viewer)
 
-- For **Ubuntu/Debian**: `sudo apt install jdtls`
-- For **Fedora**: `sudo dnf install jdtls`
-- For **Arch**: `sudo pacman -S jdtls`
+When you compile LaTex with <leader>v, it opens a zathura window with your project PDF.
 
-#### 3. Manual Installation (If Needed)
-Download the latest release from the [Eclipse JDTLS GitHub](https://github.com/eclipse/eclipse.jdt.ls) and configure Neovim to use it:
+You can install **zathura** via your system's package manager:
 
-```lua
-require'lspconfig'.jdtls.setup{
-  cmd = { '/path/to/jdtls/bin/jdtls' }
-}
+- For **Ubuntu/Debian**:
+  ```bash
+  sudo apt install zathura zathura-pdf-poppler
+  ```
+
+- For **Arch**:
+  ```bash
+  sudo pacman -S zathura zathura-pdf-poppler
+  ```
+
+### Dependencies for Telescope and Treesitter
+
+#### 📡 Telescope
+
+Telescope requires the following binaries:
+
+- For **Ubuntu/Debian**:
+  ```bash
+  sudo apt install ripgrep fd-find
+  ```
+
+- For **Arch**:
+  ```bash
+  sudo pacman -S ripgrep fd-find
+  ```
+
+#### 🌲 Treesitter
+
+Treesitter automatically installs its parsers, but it needs build tools:
+
+- For **Ubuntu/Debian**:
+  ```bash
+  sudo apt install build-essential ninja-build
+  ```
+
+- For **Arch**:
+  ```bash
+  sudo pacman -S build-essential ninja-build
+  ```
