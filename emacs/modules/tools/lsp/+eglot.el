@@ -21,6 +21,10 @@
     :type-definition #'eglot-find-typeDefinition
     :documentation   #'+eglot-lookup-documentation)
 
+  ;; Leave management of flymake to the :checkers syntax module.
+  (when (modulep! :checkers syntax -flymake)
+    (add-to-list 'eglot-stay-out-of 'flymake))
+
   ;; NOTE: This setting disable the eglot-events-buffer enabling more consistent
   ;;   performance on long running emacs instance. Default is 2000000 lines.
   ;;   After each new event the whole buffer is pretty printed which causes
@@ -28,7 +32,7 @@
   ;;   Emacs GC is put under high pressure.
   (cl-callf plist-put eglot-events-buffer-config :size 0)
 
-  (add-to-list 'doom-debug-variables '(eglot-events-buffer-config :size 2000000 :format full))
+  (set-debug-variable! 'eglot-events-buffer-config '(:size 2000000 :format full))
 
   (defadvice! +lsp--defer-server-shutdown-a (fn &optional server)
     "Defer server shutdown for a few seconds.
@@ -49,6 +53,19 @@ server an expensive restart when its buffer is reverted."
                           (+lsp-optimization-mode -1))))
                 server)))
       (funcall fn server))))
+
+
+(use-package! eglot-booster
+  :when (modulep! +booster)
+  :after eglot
+  :init
+  (setq eglot-booster-io-only
+        ;; JSON parser on 30+ is faster, so we only exploit eglot-booster's IO
+        ;; buffering (benefits more talkative LSP servers).
+        (and (> emacs-major-version 29)
+             (not (functionp 'json-rpc-connection))))
+  :config
+  (eglot-booster-mode +1))
 
 
 (use-package! consult-eglot

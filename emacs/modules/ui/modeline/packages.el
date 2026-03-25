@@ -2,7 +2,7 @@
 ;;; ui/modeline/packages.el
 
 (unless (modulep! +light)
-  (package! doom-modeline :pin "9d6f0f9635ae722b6bd943a76e996f54443e373f"))
+  (package! doom-modeline :pin "7182b612d97cd4b72d814f709abfd96bb8e62700"))
 (package! anzu :pin "21cb5ab2295614372cb9f1a21429381e49a6255f")
 (when (modulep! :editor evil)
-  (package! evil-anzu :pin "d1e98ee6976437164627542909a25c6946497899"))
+  (package! evil-anzu :pin "7309650425797420944075c9c1556c7c1ff960b3"))

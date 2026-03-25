@@ -14,8 +14,12 @@
 ;;
 ;;; Packages
 
+(defun +clojure-disable-lsp-indentation-h ()
+  (setq-local lsp-enable-indentation nil))
+
+
 (use-package! clojure-mode
-  :hook (clojure-mode . rainbow-delimiters-mode)
+  :defer t
   :config
   (set-formatter! 'cljfmt '("cljfmt" "fix" "-") :modes '(clojure-mode clojurec-mode clojurescript-mode))
 
@@ -24,39 +28,59 @@
                  clojurec-mode-local-vars-hook
                  clojurescript-mode-local-vars-hook)
                :append
-               (defun +clojure-disable-lsp-indentation-h ()
-                 (setq-local lsp-enable-indentation nil))
-               #'lsp!)
-    (after! lsp-clojure
-      (dolist (m '(clojure-mode
-                   clojurec-mode
-                   clojurescript-mode
-                   clojurex-mode))
-        (add-to-list 'lsp-language-id-configuration (cons m "clojure")))))
+               #'+clojure-disable-lsp-indentation-h
+               #'lsp!)))
 
-  (when (modulep! +tree-sitter)
-    (add-hook! '(clojure-mode-local-vars-hook
-                 clojurec-mode-local-vars-hook
-                 clojurescript-mode-local-vars-hook)
+
+(use-package! clojure-ts-mode
+  :when (modulep! +tree-sitter)
+  :defer t
+  :init
+  (setq clojure-ts-auto-remap nil)  ; we do it ourselves
+  (set-tree-sitter! 'clojure-mode 'clojure-ts-mode
+    '((clojure :url "https://github.com/sogaiu/tree-sitter-clojure")))
+  (set-tree-sitter! 'clojurec-mode 'clojure-ts-clojurec-mode 'clojure)
+  (set-tree-sitter! 'clojuredart-mode 'clojure-ts-clojuredart-mode 'clojure)
+  (set-tree-sitter! 'clojurescript-mode 'clojure-ts-clojurescript-mode 'javascript)
+  (set-tree-sitter! 'jank-mode 'clojure-ts-jank-mode 'cpp)
+  (set-tree-sitter! 'joker-mode 'clojure-ts-joker-mode 'clojure)
+  :config
+  (when (modulep! +lsp)
+    (add-hook! '(clojure-ts-mode-local-vars-hook
+                 clojure-ts-clojurec-mode-local-vars-hook
+                 clojure-ts-clojurescript-mode-local-vars-hook)
                :append
-               #'tree-sitter!)
-    ;; TODO: PR this upstream
-    (after! tree-sitter-langs
-      (add-to-list 'tree-sitter-major-mode-language-alist '(clojurec-mode . clojure))
-      (add-to-list 'tree-sitter-major-mode-language-alist '(clojurescript-mode . clojure)))))
+               #'+clojure-disable-lsp-indentation-h
+               #'lsp!))
+
+  ;; HACK: Rely on `major-mode-remap-defaults' instead (upstream also doesn't
+  ;;   check if the grammars are ready before adding these entries, which will
+  ;;   bork clojure buffers.
+  (cl-callf2 rassq-delete-all 'clojure-ts-clojurescript-mode auto-mode-alist)
+  (cl-callf2 rassq-delete-all 'clojure-ts-clojurec-mode auto-mode-alist)
+  (cl-callf2 rassq-delete-all 'clojure-ts-clojuredart-mode auto-mode-alist)
+  (cl-callf2 rassq-delete-all 'clojure-ts-jank-mode auto-mode-alist)
+  (cl-callf2 rassq-delete-all 'clojure-ts-joker-mode auto-mode-alist))
 
 
 ;; `cider-mode' is used instead of the typical `cider' package due to the main
 ;; library being loaded only when is absolutely needed, which is too late for
-;; our purposes
+;; reconfiguration in many cases.
 (use-package! cider-mode
   ;; NOTE if `org-directory' doesn't exist, `cider-jack' in won't work
   :hook (clojure-mode-local-vars . cider-mode)
+  :hook (clojure-ts-mode-local-vars . cider-mode)
   :init
   (after! clojure-mode
-    (set-repl-handler! '(clojure-mode clojurec-mode) #'+clojure/open-repl :persist t)
-    (set-repl-handler! 'clojurescript-mode #'+clojure/open-cljs-repl :persist t)
-    (set-eval-handler! '(clojure-mode clojurescript-mode clojurec-mode) #'cider-eval-region))
+    (set-repl-handler! '(clojure-mode clojure-ts-mode
+                         clojurec-mode clojure-ts-clojurec-mode)
+      #'+clojure/open-repl :persist t)
+    (set-repl-handler! '(clojurescript-mode clojure-ts-clojurescript-mode)
+      #'+clojure/open-cljs-repl :persist t)
+    (set-eval-handler! '(clojure-mode clojure-ts-mode
+                         clojurescript-mode clojure-ts-clojurescript-mode
+                         clojurec-mode clojure-ts-clojurec-mode)
+      #'cider-eval-region))
 
   ;; HACK Fix radian-software/radian#446: CIDER tries to calculate the frame's
   ;;   background too early; sometimes before the initial frame has been
@@ -125,7 +149,7 @@
   (after! evil
     (if (modulep! :editor evil +everywhere)
         ;; Match evil-collection keybindings to debugging overlay
-        (after! (cider-debug evil-collection-cider)
+        (after! cider-debug
           (mapc
            (lambda (replacement)
              (let* ((from (car replacement))
@@ -141,12 +165,12 @@
              (?l (?L "locals" "Locals"))))
 
           ;; Prevent evil-snipe from overriding evil-collection
-          (add-hook! cider--debug-mode
-                     'turn-off-evil-snipe-mode
-                     'turn-off-evil-snipe-override-mode))
+          (add-hook! 'cider--debug-mode-hook
+                     #'turn-off-evil-snipe-mode
+                     #'turn-off-evil-snipe-override-mode))
 
       ;; When in cider-debug-mode, override evil keys to not interfere with debug keys
-      (add-hook! cider--debug-mode
+      (add-hook! 'cider--debug-mode-hook
         (defun +clojure--cider-setup-debug ()
           "Setup cider debug to override evil keys cleanly"
           (evil-make-overriding-map cider--debug-mode-map 'normal)
@@ -175,17 +199,17 @@
                (label (if connected "Cider connected" "Cider disconnected")))
           (+clojure--cider-set-modeline face label))))
 
-    (add-hook! '(cider-before-eval-hook)
+    (add-hook! 'cider-before-eval-hook
       (defun +clojure--cider-before-eval-hook-update-modeline ()
         "Update modeline with cider state before eval."
         (+clojure--cider-set-modeline 'warning "Cider evaluating")))
 
-    (add-hook! '(cider-after-eval-done-hook)
+    (add-hook! 'cider-after-eval-done-hook
       (defun +clojure--cider-after-eval-done-hook-update-modeline ()
         "Update modeline with cider state after eval."
         (+clojure--cider-set-modeline 'success "Cider syncronized")))
 
-    (add-hook! '(cider-file-loaded-hook)
+    (add-hook! 'cider-file-loaded-hook
       (defun +clojure--cider-file-loaded-update-modeline ()
         "Update modeline with cider file loaded state."
         (+clojure--cider-set-modeline 'success "Cider syncronized"))))
@@ -285,6 +309,7 @@
   :when (or (modulep! -lsp)
             +clojure-load-clj-refactor-with-lsp)
   :hook (clojure-mode . clj-refactor-mode)
+  :hook (clojure-ts-mode . clj-refactor-mode)
   :config
   (set-lookup-handlers! 'clj-refactor-mode
     :references #'cljr-find-usages)

@@ -54,19 +54,19 @@ in."
 
   (print! (start "Checking your Emacs version..."))
   (print-group!
-    (cond ((or (> emacs-major-version 29)
+    (cond ((or (> emacs-major-version 30)
                (string-match-p ".\\([56]0\\|9[0-9]\\)$" emacs-version))
            (warn! "Detected a development version of Emacs (%s)" emacs-version)
-           (if (> emacs-major-version 29)
+           (if (> emacs-major-version 30)
                (explain! "This is the bleeding edge of Emacs. As it is constantly changing, Doom will not "
                          "(officially) support it. If you've found a stable commit, great! But be cautious "
                          "about updating Emacs too eagerly!\n")
              (explain! "A version that ends in .50, .60, or .9X indicates a build of Emacs in between "
                        "stable releases (i.e. development builds). Doom does not support these well.\n"))
-           (explain! "Because development builds are prone to random breakage, there will be a greater "
-                     "burden on you to investigate and deal with issues. Please make extra sure that "
-                     "your issue is reproducible on a stable version (between 27.1 and 29.4) before "
-                     "reporting them to Doom's issue tracker!\n"
+           (explain! "Because development (or bleeding edge) builds are prone to random breakage, "
+                     "there will be a greater burden on you to investigate and deal with issues. "
+                     "Please make extra sure that your issue is reproducible on a stable version "
+                     "(between 27.1 and 30.2) before reporting them to Doom's issue tracker!\n"
                      "\n"
                      "If this doesn't phase you, read the \"Why does Doom not support Emacs HEAD\" QnA "
                      "in Doom's FAQ. It offers some advice for debugging and surviving issues on the "
@@ -74,14 +74,14 @@ in."
                      "Doom's best supported version of Emacs."))
           ((= emacs-major-version 27)
            (warn! "Emacs 27 is supported, but not for long!")
-           (explain! "Doom will drop 27.x support sometime late-2024. It's recommended that you upgrade "
-                     "to the latest stable release (currently 29.4). It is better supported, faster, and "
+           (explain! "Doom will drop 27.x support sometime mid-2025. It's recommended that you upgrade "
+                     "to the latest stable release (currently 30.2). It is better supported, faster, and "
                      "more stable.")))
 
     (when (and (version= emacs-version "29.4") (featurep 'pgtk))
       (warn! "Detected emacs-pgtk 29.4!")
       (explain! "If you are experiencing segfaults (crashes), consider downgrading to 29.3 or "
-                "upgrading to 30+. A known bug in 29.4 causes intermittent crashes. "
+                "upgrading to 30.2+. A known bug in 29.4 causes intermittent crashes. "
                 "See doomemacs#7915 for details.")))
 
   (print! (start "Checking for Doom's prerequisites..."))
@@ -184,35 +184,22 @@ in."
                 (format "  (setq-default vterm-shell \"%s\")\n" shell-file-name)
                 (format "  (setq-default explicit-shell-file-name \"%s\")\n" shell-file-name)))
 
-    (condition-case e
-        (when (featurep :system 'windows)
-          (let ((filea (expand-file-name "__testfile1" temporary-file-directory))
-                (fileb (expand-file-name "__testfile2" temporary-file-directory)))
-            (unwind-protect
-                (progn
-                  (with-temp-file fileb)
-                  (make-symbolic-link fileb filea)
-                  (not (file-symlink-p filea)))
-              (delete-file filea)
-              (delete-file fileb))))
-      ('file-error
-       (when (equal (cons (nth 1 e) (nth 2 e))
-                    (cons "Making symbolic link" "Operation not permitted"))
-         (print! (warn "Symlinks are not enabled on this operating system"))
-         (explain! "In the near future, Doom will make extensive use of symlinks to save space "
-                   "and simplify package and profile management. Without symlinks, much of it "
-                   "won't be functional. To get around this, you have three options:"
-                   "\n\n"
-                   "  - Enabling 'Developer Mode' in the Windows settings (search for 'Developer "
-                   "    Settings' in the start menu). This will warn you about its effect on system "
-                   "    security, but this can be ignored. If it bothers you, consider another option "
-                   "    below.\n"
-                   "  - Running your shell (cmd or powershell) in administrator mode anytime you "
-                   "    need to use the 'doom' script. Also, the `doom/reload' command won't work "
-                   "    unless Emacs itself is launched in administrator mode.\n"
-                   "  - Install Emacs in WSL 1/2; the native Linux environment it creates supports "
-                   "    symlinks out of the box and is the best option (as Emacs is generally more "
-                   "    stable, predictable, and faster there).\n\n")))))
+    (unless (doom-system-supports-symlinks-p)
+      (print! (warn "Symlinks are not enabled on this operating system"))
+      (explain! "In the near future, Doom will make extensive use of symlinks to save space "
+                "and simplify package and profile management. Without symlinks, much of it "
+                "won't be functional. To get around this, you have three options:"
+                "\n\n"
+                "  - Enabling 'Developer Mode' in the Windows settings (search for 'Developer "
+                "    Settings' in the start menu). This will warn you about its effect on system "
+                "    security, but this can be ignored. If it bothers you, consider another option "
+                "    below.\n"
+                "  - Running your shell (cmd or powershell) in administrator mode anytime you "
+                "    need to use the 'doom' script. Also, the `doom/reload' command won't work "
+                "    unless Emacs itself is launched in administrator mode.\n"
+                "  - Install Emacs in WSL 1/2; the native Linux environment it creates supports "
+                "    symlinks out of the box and is the best option (as Emacs is generally more "
+                "    stable, predictable, and faster there).\n\n")))
 
   (print! (start "Checking for stale elc files..."))
   (elc-check-dir doom-core-dir)
@@ -351,8 +338,8 @@ in."
                       (print! "%s" (string-join (append doom-doctor--errors doom-doctor--warnings) "\n")))
                     (setq doom-local-errors doom-doctor--errors
                           doom-local-warnings doom-doctor--warnings)))
-                (appendq! doom-doctor--errors doom-local-errors)
-                (appendq! doom-doctor--warnings doom-local-warnings))))))
+                (cl-callf append doom-doctor--errors doom-local-errors)
+                (cl-callf append doom-doctor--warnings doom-local-warnings))))))
     (error
      (warn! "Attempt to load DOOM failed\n  %s\n"
             (or (cdr-safe ex) (car ex)))

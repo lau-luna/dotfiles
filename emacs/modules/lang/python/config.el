@@ -14,28 +14,39 @@
 ;;; Packages
 
 (use-package! python
-  :mode ("[./]flake8\\'" . conf-mode)
-  :mode ("/Pipfile\\'" . conf-mode)
+  :mode ("/\\(?:Pipfile\\|\\.?flake8\\)\\'" . conf-mode)
   :init
   (setq python-environment-directory doom-cache-dir
         python-indent-guess-indent-offset-verbose nil)
 
+  (when (modulep! +tree-sitter)
+    (set-tree-sitter! 'python-mode 'python-ts-mode
+      '((python :url "https://github.com/tree-sitter/tree-sitter-python"
+                :commit "bffb65a8cfe4e46290331dfef0dbf0ef3679de11"))))
+
+  :config
+  ;; HACK: `python-base-mode' (and `python-ts-mode') don't exist on pre-29
+  ;;   versions of Emacs, Rather than litter this module with conditionals, I
+  ;;   shim the keymap in.
+  (unless (boundp 'python-base-mode-map)
+    (defvaralias 'python-base-mode-map 'python-mode-map))
+
   (when (modulep! +lsp)
     (add-hook 'python-mode-local-vars-hook #'lsp! 'append)
+    (add-hook 'python-ts-mode-local-vars-hook #'lsp! 'append)
     ;; Use "mspyls" in eglot if in PATH
     (when (executable-find "Microsoft.Python.LanguageServer")
-      (set-eglot-client! 'python-mode '("Microsoft.Python.LanguageServer"))))
+      (set-eglot-client! '(python-mode python-ts-mode) '("Microsoft.Python.LanguageServer"))))
 
-  (when (modulep! +tree-sitter)
-    (add-hook 'python-mode-local-vars-hook #'tree-sitter! 'append))
-  :config
-  (set-repl-handler! 'python-mode #'+python/open-repl
+  (set-repl-handler! '(python-mode python-ts-mode) #'+python/open-repl
     :persist t
     :send-region #'python-shell-send-region
     :send-buffer #'python-shell-send-buffer)
-  (set-docsets! '(python-mode inferior-python-mode) "Python 3" "NumPy" "SciPy" "Pandas")
 
-  (set-ligatures! 'python-mode
+  (set-docsets! '(python-mode python-ts-mode inferior-python-mode)
+    "Python 3" "NumPy" "SciPy" "Pandas")
+
+  (set-ligatures! '(python-mode python-ts-mode)
     ;; Functional
     :def "def"
     :lambda "lambda"
@@ -58,11 +69,11 @@
 
   ;; Default to Python 3. Prefer the versioned Python binaries since some
   ;; systems link the unversioned one to Python 2.
-  (when (and (executable-find "python3")
-             (string= python-shell-interpreter "python"))
+  (when (and (string= python-shell-interpreter "python") ; only if unmodified
+             (executable-find "python3"))
     (setq python-shell-interpreter "python3"))
 
-  (add-hook! 'python-mode-hook
+  (add-hook! '(python-mode-hook python-ts-mode-hook)
     (defun +python-use-correct-flycheck-executables-h ()
       "Use the correct Python executables for Flycheck."
       (let ((executable python-shell-interpreter))
@@ -86,67 +97,16 @@
     (advice-add #'pythonic-activate :after-while #'+modeline-update-env-in-all-windows-h)
     (advice-add #'pythonic-deactivate :after #'+modeline-clear-env-in-all-windows-h))
 
-  (setq-hook! 'python-mode-hook tab-width python-indent-offset))
-
-
-(use-package! anaconda-mode
-  :defer t
-  :init
-  (setq anaconda-mode-installation-directory (concat doom-data-dir "anaconda/")
-        anaconda-mode-eldoc-as-single-line t)
-
-  (add-hook! 'python-mode-local-vars-hook :append
-    (defun +python-init-anaconda-mode-maybe-h ()
-      "Enable `anaconda-mode' if `lsp-mode' is absent and
-`python-shell-interpreter' is present."
-      (unless (or (bound-and-true-p lsp-mode)
-                  (bound-and-true-p eglot--managed-mode)
-                  (bound-and-true-p lsp--buffer-deferred)
-                  (not (executable-find python-shell-interpreter t)))
-        (anaconda-mode +1))))
-
-  (add-hook! 'eglot-server-initialized-hook
-    (defun +python-disable-anaconda-mode-h (&rest _)
-      "Ensure `anaconda-mode' doesn't interfere with `eglot'."
-      (when (bound-and-true-p anaconda-mode)
-        (anaconda-mode -1))))
-  :config
-  (set-company-backend! 'anaconda-mode '(company-anaconda))
-  (set-lookup-handlers! 'anaconda-mode
-    :definition #'anaconda-mode-find-definitions
-    :references #'anaconda-mode-find-references
-    :documentation #'anaconda-mode-show-doc)
-  (set-popup-rule! "^\\*anaconda-mode" :select nil)
-
-  (add-hook 'anaconda-mode-hook #'anaconda-eldoc-mode)
-
-  (defun +python-auto-kill-anaconda-processes-h ()
-    "Kill anaconda processes if this buffer is the last python buffer."
-    (when (and (eq major-mode 'python-mode)
-               (not (delq (current-buffer)
-                          (doom-buffers-in-mode 'python-mode (buffer-list)))))
-      (anaconda-mode-stop)))
-  (add-hook! 'python-mode-hook
-    (add-hook 'kill-buffer-hook #'+python-auto-kill-anaconda-processes-h
-              nil 'local))
-
-  (when (featurep 'evil)
-    (add-hook 'anaconda-mode-hook #'evil-normalize-keymaps))
-  (map! :localleader
-        :map anaconda-mode-map
-        :prefix ("g" . "conda")
-        "d" #'anaconda-mode-find-definitions
-        "h" #'anaconda-mode-show-doc
-        "a" #'anaconda-mode-find-assignments
-        "f" #'anaconda-mode-find-file
-        "u" #'anaconda-mode-find-references))
+  ;; HACK: `python-mode' doesn't update `tab-width' to reflect
+  ;;   `python-indent-offset', causing issues anywhere `tab-width' is respected.
+  (setq-hook! '(python-mode-hook python-ts-mode-hook) tab-width python-indent-offset))
 
 
 (use-package! pyimport
   :defer t
   :init
   (map! :after python
-        :map python-mode-map
+        :map python-base-mode-map
         :localleader
         :prefix ("i" . "imports")
         :desc "Insert missing imports" "i" #'pyimport-insert-missing
@@ -158,11 +118,12 @@
   :defer t
   :init
   (map! :after python
-        :map python-mode-map
+        :map python-base-mode-map
         :localleader
         (:prefix ("i" . "imports")
          :desc "Sort imports"      "s" #'py-isort-buffer
          :desc "Sort region"       "r" #'py-isort-region)))
+
 
 (use-package! nose
   :commands nose-mode
@@ -191,7 +152,7 @@
   :init
   (map! :after python
         :localleader
-        :map python-mode-map
+        :map python-base-mode-map
         :prefix ("t" . "test")
         "a" #'python-pytest
         "f" #'python-pytest-file-dwim
@@ -210,7 +171,7 @@
   :hook (python-mode . pipenv-mode)
   :init (setq pipenv-with-projectile nil)
   :config
-  (set-eval-handler! 'python-mode
+  (set-eval-handler! '(python-mode python-ts-mode)
     '((:command . (lambda () python-shell-interpreter))
       (:exec (lambda ()
                (if-let* ((bin (executable-find "pipenv" t))
@@ -218,7 +179,7 @@
                    (format "PIPENV_MAX_DEPTH=9999 %s run %%c %%o %%s %%a" bin)
                  "%c %o %s %a")))
       (:description . "Run Python script")))
-  (map! :map python-mode-map
+  (map! :map python-base-mode-map
         :localleader
         :prefix ("e" . "pipenv")
         :desc "activate"    "a" #'pipenv-activate
@@ -238,7 +199,8 @@
     (add-hook 'pyvenv-post-activate-hooks #'+modeline-update-env-in-all-windows-h)
     (add-hook 'pyvenv-pre-deactivate-hooks #'+modeline-clear-env-in-all-windows-h))
   :config
-  (add-hook 'python-mode-local-vars-hook #'pyvenv-track-virtualenv)
+  (add-hook! '(python-mode-local-vars-hook python-ts-mode-local-vars-hook)
+             #'pyvenv-track-virtualenv)
   (add-to-list 'global-mode-string
                '(pyvenv-virtual-env-name (" venv:" pyvenv-virtual-env-name " "))
                'append))
@@ -252,50 +214,18 @@
   (when (executable-find "pyenv")
     (pyenv-mode +1)
     (add-to-list 'exec-path (expand-file-name "shims" (or (getenv "PYENV_ROOT") "~/.pyenv"))))
-  (add-hook 'python-mode-local-vars-hook #'+python-pyenv-mode-set-auto-h)
+  (add-hook! '(python-mode-local-vars-hook python-ts-mode-local-vars-hook)
+             #'+python-pyenv-mode-set-auto-h)
   (add-hook 'doom-switch-buffer-hook #'+python-pyenv-mode-set-auto-h))
 
 
 (use-package! conda
   :when (modulep! +conda)
   :after python
-  :preface
-  ;; HACK: `conda-anaconda-home's initialization can throw an error if none of
-  ;;   `conda-home-candidates' exist, so unset it early.
-  ;; REVIEW: Fix this upstream.
-  (setq conda-anaconda-home (getenv "ANACONDA_HOME")
-        conda-home-candidates
-        (list "~/.anaconda"
-              "~/.anaconda3"
-              "~/.miniconda"
-              "~/.miniconda3"
-              "~/.miniforge3"
-              "~/anaconda3"
-              "~/miniconda3"
-              "~/miniforge3"
-              "~/opt/miniconda3"
-              "/usr/bin/anaconda3"
-              "/usr/local/anaconda3"
-              "/usr/local/miniconda3"
-              "/usr/local/Caskroom/miniconda/base"
-              "~/.conda"))
   :config
-  ;; The location of your anaconda home will be guessed from a list of common
-  ;; possibilities, starting with `conda-anaconda-home''s default value (which
-  ;; will consult a ANACONDA_HOME envvar, if it exists).
-  ;;
-  ;; If none of these work for you, `conda-anaconda-home' must be set
-  ;; explicitly. Afterwards, run M-x `conda-env-activate' to switch between
-  ;; environments
-  (or (cl-loop for dir in (cons conda-anaconda-home conda-home-candidates)
-               if (and dir (file-directory-p dir))
-               return (setq conda-anaconda-home (expand-file-name dir)
-                            conda-env-home-directory (expand-file-name dir)))
-      (message "Cannot find Anaconda installation"))
-
   ;; integration with term/eshell
   (conda-env-initialize-interactive-shells)
-  (after! eshell (conda-env-initialize-eshell))
+  (add-hook 'eshell-load-hook #'conda-env-initialize-eshell)
 
   (add-to-list 'global-mode-string
                '(conda-env-current-name (" conda:" conda-env-current-name " "))
@@ -305,14 +235,13 @@
 (use-package! poetry
   :when (modulep! +poetry)
   :after python
-  :init
-  (setq poetry-tracking-strategy 'switch-buffer)
-  (add-hook 'python-mode-hook #'poetry-tracking-mode))
+  :hook (doom-first-buffer . poetry-tracking-mode)
+  :init (setq poetry-tracking-strategy 'switch-buffer))
 
 
 (use-package! cython-mode
   :when (modulep! +cython)
-  :mode "\\.p\\(yx\\|x[di]\\)\\'"
+  :defer t
   :config
   (setq cython-default-compile-format "cython -a %s")
   (map! :map cython-mode-map
@@ -352,7 +281,4 @@
   :when (modulep! +lsp)
   :when (modulep! +pyright)
   :when (modulep! :tools lsp -eglot)
-  :defer t
-  :init
-  (when (executable-find "basedpyright")
-    (setq lsp-pyright-langserver-command "basedpyright")))
+  :defer t)

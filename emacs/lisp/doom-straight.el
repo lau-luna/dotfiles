@@ -55,7 +55,10 @@
       ;; no affect on packages that are pinned, however (run 'doom sync --gc' to
       ;; compact those after-the-fact). Some packages break when shallow cloned
       ;; (like magit and org), but we'll deal with that elsewhere.
-      straight-vc-git-default-clone-depth '(1 single-branch))
+      straight-vc-git-default-clone-depth '(1 single-branch)
+      ;; Install archives from forges instead of cloning them. Much faster and
+      ;; lighter.
+      straight-vc-use-snapshot-installation (and (executable-find "tar") t))
 
 (with-eval-after-load 'straight
   ;; HACK: Doom relies on deferred compilation, which spares the user 20-50min
@@ -168,6 +171,9 @@ original state.")
 
 (defadvice! doom-straight--no-compute-prefixes-a (fn &rest args)
   :around #'straight--build-autoloads
+  (eval-when-compile
+    (or (require 'loaddefs-gen nil 'noerror)
+        (require 'autoload)))
   (let (autoload-compute-prefixes)
     (apply fn args)))
 
@@ -184,7 +190,7 @@ original state.")
     (let ((doom-straight--auto-options doom-straight--auto-options))
       ;; We can't intercept C-g, so no point displaying any options for this key
       ;; when C-c is the proper way to abort batch Emacs.
-      (delq! "C-g" actions 'assoc)
+      (cl-callf2 delq 'assoc actions)
       ;; HACK: Remove actions that don't work in noninteractive Emacs (like
       ;;   opening dired or magit).
       (setq actions
@@ -281,38 +287,6 @@ However, in batch mode, print to stdout instead of stderr."
    (if (eq (cadr e) 'stringp)
        (error "Package was not properly cloned due to a connection failure, please try again later")
      (signal (car e) (cdr e))))))
-
-;; HACK: Fix an issue where straight wasn't byte-compiling some packages (or
-;;   some files in packages) due to missing (invisible) dependencies.
-(defadvice! doom-straight--byte-compile-a (recipe)
-  "See https://github.com/radian-software/straight.el/pull/1132"
-  :override #'straight--build-compile
-  (let* ((pkg (plist-get recipe :package))
-         (dir (straight--build-dir pkg))
-         (emacs (concat invocation-directory invocation-name))
-         (buffer straight-byte-compilation-buffer)
-         (deps
-          (let (tmp)
-            (dolist (dep (straight--flatten (straight-dependencies pkg)) tmp)
-              (let ((build-dir (straight--build-dir dep)))
-                (when (file-exists-p build-dir)
-                  (push build-dir tmp))))))
-         (print-circle nil)
-         (print-length nil)
-         (program
-          (format "%S" `(let ((default-directory ,(straight--build-dir))
-                              (lp load-path))
-                          (setq load-path (list default-directory))
-                          (normal-top-level-add-subdirs-to-load-path)
-                          (setq load-path (append '(,dir) ',deps load-path lp))
-                          (byte-recompile-directory ,dir 0 'force))))
-         (args (list "-Q" "--batch" "--eval" program)))
-    (when buffer
-      (with-current-buffer (get-buffer-create buffer)
-        (insert (format "\n$ %s %s \\\n %S\n" emacs
-                        (string-join (butlast args) " ")
-                        program))))
-    (apply #'call-process `(,emacs nil ,buffer nil ,@args))))
 
 (provide 'doom-straight)
 ;;; doom-packages.el ends here

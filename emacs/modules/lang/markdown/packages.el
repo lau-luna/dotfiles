@@ -1,15 +1,20 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; lang/markdown/packages.el
 
-(package! markdown-mode :pin "e1007785947ac8b32d8977a2843a11aded40682b")
-(package! markdown-toc :pin "d2fb4cbd95e558042307d706f9f47f93687c9fcc")
+(package! markdown-mode :pin "d51c469133d220823cc6ab50ff8e8743ed6e42fb")
+(package! markdown-toc :pin "e3429d3014655b7d2ff6d5ac12b27d4d94fdcee4")
 
 ;; Required by `markdown-mode', or it will install it via package.el if it isn't
 ;; present when you call `markdown-edit-code-block'.
 (package! edit-indirect :pin "82a28d8a85277cfe453af464603ea330eae41c05")
 
+(when (and (modulep! +tree-sitter) (treesit-available-p))
+  (package! markdown-ts-mode
+    :built-in 'prefer  ; Emacs 31+ has a superior markdown-ts-mode
+    :pin "2f1ee8b94cdf53cebc31ae08ecfbba846193d5e1"))
+
 (when (modulep! +grip)
-  (package! grip-mode :pin "df0ba7589db7c54c4b68bd6a96a246676d7893c3"))
+  (package! grip-mode :pin "11fecd5b38c78597ff53a39fb3a090e7c80350fa"))
 
 (when (modulep! :editor evil +everywhere)
   (package! evil-markdown

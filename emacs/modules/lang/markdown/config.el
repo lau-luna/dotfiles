@@ -19,7 +19,6 @@ capture, the end position, and the output buffer.")
   :mode ("/README\\(?:\\.md\\)?\\'" . gfm-mode)
   :init
   (setq markdown-italic-underscore t
-        markdown-asymmetric-header t
         markdown-gfm-additional-languages '("sh")
         markdown-make-gfm-checkboxes-buttons t
         markdown-fontify-whole-heading-line t
@@ -45,7 +44,12 @@ capture, the end position, and the output buffer.")
                 "<style> body { box-sizing: border-box; max-width: 740px; width: 100%; margin: 40px auto; padding: 0 10px; } </style>"
                 "<script id='MathJax-script' async src='https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'></script>"
                 "<script src='https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js'></script>"
-                "<script>document.addEventListener('DOMContentLoaded', () => { document.body.classList.add('markdown-body'); document.querySelectorAll('pre[lang] > code').forEach((code) => { code.classList.add(code.parentElement.lang); }); document.querySelectorAll('pre > code').forEach((code) => { hljs.highlightBlock(code); }); });</script>"))
+                "<script>document.addEventListener('DOMContentLoaded', () => { document.body.classList.add('markdown-body'); document.querySelectorAll('pre[lang] > code').forEach((code) => { code.classList.add(code.parentElement.lang); }); document.querySelectorAll('pre > code').forEach((code) => { hljs.highlightBlock(code); }); });</script>")
+        ;; Disabled to prevent accidentally clicking links while focusing Emacs
+        ;; or a markdown buffer. We prefer keyboard-centric workflows anyway and
+        ;; already have ffap or lookup commands for opening links at point (e.g.
+        ;; gf or pressing RET on a link).
+        markdown-mouse-follow-link nil)
 
   :config
   (set-flyspell-predicate! '(markdown-mode gfm-mode)
@@ -124,6 +128,13 @@ capture, the end position, and the output buffer.")
          :desc "Markup hiding"     "m" #'markdown-toggle-markup-hiding
          :desc "Wiki links"        "w" #'markdown-toggle-wiki-links
          :desc "GFM checkbox"      "x" #'markdown-toggle-gfm-checkbox)))
+
+
+(use-package! markdown-ts-mode  ; 31+ only
+  :when (modulep! +tree-sitter)
+  :defer t
+  :init
+  (set-tree-sitter! 'markdown-mode 'markdown-ts-mode '(markdown markdown-inline)))
 
 
 (use-package! evil-markdown

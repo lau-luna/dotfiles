@@ -2,7 +2,7 @@
 ;;; lang/coq/packages.el
 
 (package! proof-general
-  :pin "d6689469298b4140dc1f0f8b0ff7e8f937041ffe"
+  :pin "fbb2878e49483181f6687b8ca15ecf9a597ff947"
   ;; REVIEW: Remove when ProofGeneral/PG#771 is fixed. Also see #8169.
   :recipe (:build (:not autoloads)))
-(package! company-coq :pin "5affe7a96a25df9101f9e44bac8a828d8292c2fa")
+(package! company-coq :pin "78ed04ce39e925232a556d2077718cc7b215469c")

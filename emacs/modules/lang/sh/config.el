@@ -37,9 +37,6 @@
   (when (modulep! +lsp)
     (add-hook 'sh-mode-local-vars-hook #'lsp! 'append))
 
-  (when (modulep! +tree-sitter)
-    (add-hook 'sh-mode-local-vars-hook #'tree-sitter! 'append))
-
   (setq sh-indent-after-continuation 'always)
 
   ;; [pedantry intensifies]
@@ -66,11 +63,10 @@
               (1 'sh-quoted-exec prepend))
              (,(regexp-opt +sh-builtin-keywords 'symbols)
               (0 'font-lock-type-face append))))))
-  ;; 4. Fontify delimiters by depth
-  (add-hook 'sh-mode-hook #'rainbow-delimiters-mode)
 
   ;; autoclose backticks
   (sp-local-pair 'sh-mode "`" "`" :unless '(sp-point-before-word-p sp-point-before-same-p)))
+
 
 (use-package! company-shell
   :when (modulep! :completion company)
@@ -81,6 +77,15 @@
   (setq company-shell-delete-duplicates t
         ;; whatis lookups are exceptionally slow on macOS (#5860)
         company-shell-dont-fetch-meta (featurep :system 'macos)))
+
+
+(use-package! bash-completion
+  :when (modulep! :completion corfu)
+  :unless (modulep! +lsp)
+  :init
+  (add-hook! 'sh-mode-hook
+    (add-hook 'completion-at-point-functions
+              #'bash-completion-capf-nonexclusive nil t)))
 
 
 (use-package! powershell

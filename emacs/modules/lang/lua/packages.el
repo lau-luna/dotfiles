@@ -1,7 +1,7 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; lang/lua/packages.el
 
-(package! lua-mode :pin "d074e4134b1beae9ed4c9b512af741ca0d852ba3")
+(package! lua-mode :pin "2f6b8d7a6317e42c953c5119b0119ddb337e0a5f")
 
 (when (modulep! +moonscript)
   (package! moonscript :pin "56f90471e2ced2b0a177aed4d8c2f854797e9cc7")
@@ -11,7 +11,7 @@
       :pin "fcb99e5efcf31db05f236f02eaa575986a57172d")))
 
 (when (modulep! +fennel)
-  (package! fennel-mode :pin "3632cc77de3ba350297b46bea9ccc3e41e4c1def"))
+  (package! fennel-mode :pin "0d638f6133cb1d9dc09754a198625f2b698c76a1"))
 
 (when (modulep! :completion company)
   (package! company-lua :pin "29f6819de4d691e5fd0b62893a9f4fbc1c6fcb52"))

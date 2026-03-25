@@ -83,6 +83,31 @@
   (setq tramp-default-method "ssh")) ; faster than the default scp
 
 
+;;;###package whitespace
+(add-hook! 'after-change-major-mode-hook :append
+  (defun +emacs-highlight-non-default-indentation-h ()
+    "Highlight whitespace at odds with `indent-tabs-mode'.
+That is, highlight tabs if `indent-tabs-mode' is `nil', and highlight spaces at
+the beginnings of lines if `indent-tabs-mode' is `t'. The purpose is to make
+incorrect indentation in the current buffer obvious to you.
+
+Does nothing if `whitespace-mode' or `global-whitespace-mode' is already active
+or if the current buffer is read-only or not file-visiting."
+    (unless (or (eq major-mode 'fundamental-mode)
+                (bound-and-true-p global-whitespace-mode)
+                (null buffer-file-name)
+                buffer-read-only)
+      (require 'whitespace)
+      (set (make-local-variable 'whitespace-style)
+           (cl-union (if indent-tabs-mode
+                         '(indentation)
+                       '(tabs tab-mark))
+                     (when whitespace-mode
+                       (remq 'face whitespace-active-style))))
+      (cl-pushnew 'face whitespace-style) ; must be first
+      (whitespace-mode +1))))
+
+
 ;;
 ;;; Smartparens config
 
@@ -126,19 +151,19 @@
     (sp-local-pair sp-lisp-modes "(" ")" :unless '(:rem sp-point-before-same-p))
 
     ;; Major-mode specific fixes
-    (sp-local-pair 'ruby-mode "{" "}"
+    (sp-local-pair '(ruby-mode ruby-ts-mode) "{" "}"
                    :pre-handlers '(:rem sp-ruby-pre-handler)
                    :post-handlers '(:rem sp-ruby-post-handler))
 
     ;; Don't eagerly escape Swift style string interpolation
-    (sp-local-pair 'swift-mode "\\(" ")" :when '(sp-in-string-p))
+    (sp-local-pair '(swift-mode swift-ts-mode) "\\(" ")" :when '(sp-in-string-p))
 
     ;; Don't do square-bracket space-expansion where it doesn't make sense to
-    (sp-local-pair '(emacs-lisp-mode org-mode markdown-mode gfm-mode)
+    (sp-local-pair '(emacs-lisp-mode org-mode markdown-mode markdown-ts-mode gfm-mode)
                    "[" nil :post-handlers '(:rem ("| " "SPC")))
 
     ;; Reasonable default pairs for HTML-style comments
-    (sp-local-pair (append sp--html-modes '(markdown-mode gfm-mode))
+    (sp-local-pair (append sp--html-modes '(markdown-mode markdown-ts-mode gfm-mode))
                    "<!--" "-->"
                    :unless '(sp-point-before-word-p sp-point-before-same-p)
                    :actions '(insert) :post-handlers '(("| " "SPC")))
@@ -171,13 +196,14 @@
                (looking-at-p "[ 	]*#include[^<]+"))))
 
       ;; ...and leave it to smartparens
-      (sp-local-pair '(c++-mode objc-mode)
+      (sp-local-pair '(c++-mode c++-ts-mode objc-mode)
                      "<" ">"
                      :when '(+default-cc-sp-point-is-template-p
                              +default-cc-sp-point-after-include-p)
                      :post-handlers '(("| " "SPC")))
 
-      (sp-local-pair '(c-mode c++-mode objc-mode java-mode)
+      (sp-local-pair '(c-mode c++-mode objc-mode java-mode
+                       c-ts-mode c++-ts-mode java-ts-mode)
                      "/*!" "*/"
                      :post-handlers '(("||\n[i]" "RET") ("[d-1]< | " "SPC"))))
 
@@ -187,8 +213,14 @@
         (newline)
         (indent-according-to-mode)))
     (sp-local-pair
-     '(js2-mode typescript-mode rjsx-mode rust-mode c-mode c++-mode objc-mode
-       csharp-mode java-mode php-mode css-mode scss-mode less-css-mode
+     '(js-mode js-ts-mode typescript-mode typescript-ts-mode tsx-ts-mode
+       rust-mode rust-ts-mode rustic-mode
+       c-mode c++-mode objc-mode c-ts-mode c++-ts-mode
+       csharp-mode csharp-ts-mode
+       java-mode java-ts-mode
+       php-mode php-ts-mode
+       css-mode css-ts-mode
+       scss-mode less-css-mode
        stylus-mode scala-mode)
      "/*" "*/"
      :actions '(insert)
@@ -204,11 +236,11 @@
                        :post-handlers '(("| " "SPC") ("|[i]*)[d-2]" "RET")))))
 
     (after! smartparens-markdown
-      (sp-with-modes '(markdown-mode gfm-mode)
+      (sp-with-modes '(markdown-mode markdown-ts-mode gfm-mode)
         (sp-local-pair "```" "```" :post-handlers '(:add ("||\n[i]" "RET")))
 
         ;; The original rules for smartparens had an odd quirk: inserting two
-        ;; asterixex would replace nearby quotes with asterixes. These two rules
+        ;; asterisks would replace nearby quotes with asterisks. These two rules
         ;; set out to fix this.
         (sp-local-pair "**" nil :actions :rem)
         (sp-local-pair "*" "*"
@@ -220,30 +252,34 @@
                        :post-handlers '(("[d1]" "SPC") ("|*" "*"))))
 
       ;; This keybind allows * to skip over **.
-      (map! :map markdown-mode-map
-            :ig "*" (general-predicate-dispatch nil
-                      (looking-at-p "\\*\\* *")
-                      (cmd! (forward-char 2)))))
+      (let ((fn (general-predicate-dispatch nil
+                  (looking-at-p "\\*\\* *")
+                  (cmd! (forward-char 2)))))
+        (map! :map markdown-mode-map :ig "*" fn)
+        (map! :after markdown-ts-mode :map markdown-ts-mode-map :ig "*" fn)))
 
     ;; Removes haskell-mode trailing braces
     (after! smartparens-haskell
-      (sp-with-modes '(haskell-mode haskell-interactive-mode)
-        (sp-local-pair "{-" "-}" :actions :rem)
-        (sp-local-pair "{-#" "#-}" :actions :rem)
-        (sp-local-pair "{-@" "@-}" :actions :rem)
+      (sp-with-modes '(haskell-mode haskell-ts-mode haskell-interactive-mode)
+        (sp-local-pair "{-" "-}" :actions nil)
+        (sp-local-pair "{-#" "#-}" :actions nil)
+        (sp-local-pair "{-@" "@-}" :actions nil)
         (sp-local-pair "{-" "-")
         (sp-local-pair "{-#" "#-")
         (sp-local-pair "{-@" "@-")))
 
     (after! smartparens-python
-      (sp-with-modes 'python-mode
+      (sp-with-modes '(python-mode python-ts-mode)
         ;; Automatically close f-strings
         (sp-local-pair "f\"" "\"")
         (sp-local-pair "f\"\"\"" "\"\"\"")
         (sp-local-pair "f'''" "'''")
         (sp-local-pair "f'" "'"))
       ;; Original keybind interferes with smartparens rules
-      (define-key python-mode-map (kbd "DEL") nil)
+      (after! python
+        (define-key (or (bound-and-true-p python-base-mode-map)
+                        python-mode-map)
+                    (kbd "DEL") nil))
       ;; Interferes with the def snippet in doom-snippets
       ;; TODO Fix this upstream, in doom-snippets, instead
       (setq sp-python-insert-colon-in-function-definitions nil))))
@@ -320,10 +356,12 @@ Continues comments if executed from a commented line."
         "s-s" #'save-buffer
         "s-x" #'execute-extended-command
         :v "s-x" #'kill-region
-        ;; Buffer-local font scaling
-        "s-+" #'doom/reset-font-size
+        "s-0" #'doom/reset-font-size
+        ;; Global font scaling
         "s-=" #'doom/increase-font-size
+        "s-+" #'doom/increase-font-size
         "s--" #'doom/decrease-font-size
+        "s-_" #'doom/decrease-font-size
         ;; Conventional text-editing keys & motions
         "s-a" #'mark-whole-buffer
         "s-/" (cmd! (save-excursion (comment-line 1)))
@@ -334,7 +372,19 @@ Continues comments if executed from a commented line."
         :gi  [s-right]     #'doom/forward-to-last-non-comment-or-eol
         :gi  [M-backspace] #'backward-kill-word
         :gi  [M-left]      #'backward-word
-        :gi  [M-right]     #'forward-word))
+        :gi  [M-right]     #'forward-word
+        (:when (modulep! :ui workspaces)
+         :g "s-t"   #'+workspace/new
+         :g "s-T"   #'+workspace/display
+         :n "s-1"   #'+workspace/switch-to-0
+         :n "s-2"   #'+workspace/switch-to-1
+         :n "s-3"   #'+workspace/switch-to-2
+         :n "s-4"   #'+workspace/switch-to-3
+         :n "s-5"   #'+workspace/switch-to-4
+         :n "s-6"   #'+workspace/switch-to-5
+         :n "s-7"   #'+workspace/switch-to-6
+         :n "s-8"   #'+workspace/switch-to-7
+         :n "s-9"   #'+workspace/switch-to-final)))
 
 
 ;;
@@ -344,7 +394,7 @@ Continues comments if executed from a commented line."
 ;; universal.
 (define-key! help-map
   ;; new keybinds
-  "'"    #'describe-char
+  "'"    #'doom/describe-char
   "u"    #'doom/help-autodefs
   "E"    #'doom/sandbox
   "M"    #'doom/describe-active-minor-mode

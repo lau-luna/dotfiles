@@ -6,12 +6,9 @@
 (package! yard-mode :pin "de1701753a64544c3376b015805f3661136d8038")
 
 ;; REPL
-(package! inf-ruby :pin "dad78a13f162200a0f6720fe40e0726525424bba")
+(package! inf-ruby :pin "b8076aad10dfb0ba1e3a8b0d39c2b370dbe96ab0")
 (when (modulep! :completion company)
   (package! company-inf-ruby :pin "fe3e4863bc971fbb81edad447efad5795ead1b17"))
-
-;; Programming environment
-(package! rubocop :pin "f5fd18aa810c3d3269188cbbd731ddc09006f8f5")
 
 ;; Project tools
 (package! bundler :pin "43efb6be4ed118b06d787ce7fbcffd68a31732a7")
@@ -27,7 +24,7 @@
 
 ;; Testing frameworks
 (package! rspec-mode :pin "29df3d081c6a1cbdf840cd13d45ea1c100c5bbaa")
-(package! minitest :pin "5999c45c047212cee15a2be67e78787776a79c35")
+(package! minitest :pin "d278e94fb1874c584699e1d6fa1b34224c1f8550")
 
 ;; Refactoring
 (package! ruby-json-to-hash :pin "383b22bb2e007289ac0dba146787d02ff99d4415")

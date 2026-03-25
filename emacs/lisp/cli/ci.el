@@ -118,23 +118,24 @@ Each element of this list can be one of:
           (unless (equal scopes (sort (copy-sequence scopes) #'string-lessp))
             (fail! "Scopes are not in lexicographical order")))
 
-        (lambda! (&key type body)
+        (lambda! (&key _type body)
           "Enforce 72 character line width for BODY"
           (catch 'result
             (with-temp-buffer
               (save-excursion (insert body))
               (while (re-search-forward "^[^\n]\\{73,\\}" nil t)
                 (save-excursion
-                  (or
-                   ;; Long bump lines are acceptable
-                   (let ((bump-re "\\(https?://.+\\|[^/]+\\)/[^/]+@[a-z0-9]\\{12\\}"))
-                     (re-search-backward (format "^%s -> %s$" bump-re bump-re) nil t))
-                   ;; Long URLs are acceptable
-                   (re-search-backward "https?://[^ ]+\\{73,\\}" nil t)
-                   ;; Lines that start with # or whitespace are comment or
-                   ;; code blocks.
-                   (re-search-backward "^\\(?:#\\| +\\)" nil t)
-                   (throw 'result (fail! "Line(s) in commit body exceed 72 characters"))))))))
+                  (let ((bol (match-beginning 0)))
+                    (or
+                     ;; Long bump lines are acceptable
+                     (let ((bump-re "\\(https?://.+\\|[^/]+\\)/[^/]+@[a-z0-9]\\{12\\}"))
+                       (re-search-backward (format "^%s -> %s$" bump-re bump-re) bol t))
+                     ;; Long URLs are acceptable
+                     (re-search-backward "https?://[^ \n]+" bol t)
+                     ;; Lines that start with # or whitespace are comment or
+                     ;; code blocks.
+                     (re-search-backward "^\\(?:#\\| +\\)" bol t)
+                     (throw 'result (fail! "Line(s) in commit body exceed 72 characters")))))))))
 
         (lambda! (&key bang body type)
           "Ensure ! is accompanied by a 'BREAKING CHANGE:' in BODY"
@@ -319,7 +320,8 @@ Lints the current commit message."
           (point-min)
           (if (re-search-forward "^# Please enter the commit message" nil t)
               (match-beginning 0)
-            (point-max))))))))
+            (point-max)))))
+     t)))
 
 ;; TODO Move to 'doom lint hook:pre-push'
 (defcli! (ci hook pre-push) (remote url)
@@ -420,10 +422,15 @@ Prevents pushing if there are unrebased or WIP commits."
                        (match-string 2)))))
         (cl-sort (delete-dups packages) #'string-lessp :key #'car)))))
 
-(defun doom-ci--lint (commits)
+(defun doom-ci--lint (commits &optional echo-msg)
+  "lint commit messages in the given COMMITS alist (mapping ref -> message).
+
+print the original message again when ECHO-MSG is non-nil."
   (let ((warnings 0)
         (failures 0))
-    (print! (start "Linting %d commits" (length commits)))
+    (if (= (length commits) 1)
+        (print! (start "Linting commit..."))
+      (print! (start "Linting %d commits..." (length commits))))
     (print-group!
       (pcase-dolist (`(,ref . ,commitmsg) commits)
         (let* ((commit   (doom-ci--parse-commit commitmsg))
@@ -450,6 +457,12 @@ Prevents pushing if there are unrebased or WIP commits."
         (if (> failures 0) (print! (warn "Failures: %d" failures)))
         (print! "\nSee https://discourse.doomemacs.org/git-conventions")
         (unless (zerop failures)
+          (when echo-msg
+            (print! "\nPlease adjust your previous attempt:")
+            (pcase-dolist (`(,ref . ,commitmsg) commits)
+              (when (not (string= ref "CURRENT"))
+                (print! "\n%s\n" ref))
+              (print! "%s" commitmsg)))
           (exit! 1)))
       t)))
 
