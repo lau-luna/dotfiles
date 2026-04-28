@@ -10,6 +10,7 @@ M.general = {
     
     -- Para HTML (necesita extensión)
     ["<leader>hp"] = { "<cmd>PreviewHTML<CR>", "HTML Preview" },
+
   }
 }
 

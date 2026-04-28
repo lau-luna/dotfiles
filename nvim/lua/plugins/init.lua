@@ -1,48 +1,106 @@
 return {
+
+  -- ========================
+  -- 🧼 FORMATTER (UNO SOLO)
+  -- ========================
   {
     "stevearc/conform.nvim",
-    -- event = 'BufWritePre', -- uncomment for format on save
-    opts = require "configs.conform",
+    opts = require("configs.conform"),
   },
 
-  -- LSP Config (SOLO UNA VEZ)
+  -- ========================
+  -- 🧠 LSP
+  -- ========================
   {
     "neovim/nvim-lspconfig",
     config = function()
-      require "configs.lspconfig"
+      require("configs.lspconfig")
     end,
   },
 
-  -- Mason para instalar LSP servers automáticamente
+  -- ========================
+  -- 📦 Mason (LSP installer)
+  -- ========================
   {
     "williamboman/mason.nvim",
     opts = {
       ensure_installed = {
         "html-lsp",
-        "css-lsp", 
+        "css-lsp",
         "haskell-language-server",
         "texlab",
         "clangd",
-        "cpptools",
+        "ltex-ls",
+        "typescript-language-server",
+        "eslint-lsp",
       },
     },
   },
 
-  -- Treesitter para sintaxis
+  -- ========================
+  -- 🌳 Treesitter
+  -- ========================
   {
     "nvim-treesitter/nvim-treesitter",
     opts = {
       ensure_installed = {
         "vim", "lua", "vimdoc",
         "html", "css", "haskell",
-        "latex",
-        "c",
-        "cpp"
+        "latex", "c", "cpp",
+        "markdown", "markdown_inline", "yaml",
+        "javascript"
+      },
+      highlight = {
+        enable = true,
+        disable = { "markdown" },
       },
     },
   },
-  
-  -- Java LSP jdtls
+
+  -- ========================
+  -- ⚡ Emmet (HTML rápido)
+  -- ========================
+  {
+    "mattn/emmet-vim",
+    ft = { "html", "css", "javascriptreact" },
+  },
+
+  -- ========================
+  -- 🔒 Auto cerrar tags HTML
+  -- ========================
+  {
+    "windwp/nvim-ts-autotag",
+    ft = { "html" },
+    config = function()
+      require("nvim-ts-autotag").setup()
+    end,
+  },
+
+  -- ========================
+  -- 🧪 Lint + Grammar
+  -- ========================
+  {
+    "nvimtools/none-ls.nvim",
+    config = function()
+      local null_ls = require("null-ls")
+
+      null_ls.setup({
+        sources = {
+          -- HTML lint
+          -- null_ls.builtins.diagnostics.htmlhint,
+
+          -- Grammar check (English)
+          null_ls.builtins.diagnostics.languagetool.with({
+            extra_args = { "--language", "en-US" },
+          }),
+        },
+      })
+    end,
+  },
+
+  -- ========================
+  -- ☕ Java (jdtls)
+  -- ========================
   {
     "mfussenegger/nvim-jdtls",
     ft = "java",
@@ -51,63 +109,44 @@ return {
     end,
   },
 
-  -- Formateador para Haskell
+  -- ========================
+  -- 🐫 Haskell syntax
+  -- ========================
   {
-    "stevearc/conform.nvim",
-    opts = {
-      formatters_by_ft = {
-        haskell = { "fourmolu" },  -- Agregar esta línea
-        html = { "prettier" },
-        htmldjango = { "prettier" },
-      },
-    },
+    "neovimhaskell/haskell-vim",
+    ft = "haskell",
   },
 
-  -- Plugin para mejor sintaxis de Haskell
-  {
-    'neovimhaskell/haskell-vim',
-    ft = 'haskell',
-  },
-
-
-  -- Formateador para C++ 
-  {
-    "stevearc/conform.nvim",
-    opts = {
-      formatters_by_ft = {
-        haskell = { "fourmolu" },
-        html = { "prettier" },
-        htmldjango = { "prettier" },
-        c = { "clang-format" },      -- Agregar esta línea
-        cpp = { "clang-format" },    -- Agregar esta línea
-      },
-    },
-  },
-
-  -- Servidor live con vite
+  -- ========================
+  -- 🧪 Live Server
+  -- ========================
   {
     "aurum77/live-server.nvim",
-    ft = {"html", "css", "javascript", "php"},
+    ft = { "html", "css", "javascript", "php" },
     run = function()
-      require"live_server.util".install()
+      require("live_server.util").install()
     end,
     config = function()
-      require"live_server".setup({})
-      vim.keymap.set('n', '<leader>ll', ':LiveServerStart<CR>', {noremap = true, silent = true})
-      vim.keymap.set('n', '<leader>lq', ':LiveServerStop<CR>', {noremap = true, silent = true})
+      require("live_server").setup({})
+
+      vim.keymap.set('n', '<leader>ll', ':LiveServerStart<CR>', { noremap = true, silent = true })
+      vim.keymap.set('n', '<leader>lq', ':LiveServerStop<CR>', { noremap = true, silent = true })
     end,
   },
 
-  -- Vimtex para LaTeX (AGREGAR ESTE PLUGIN)
+  -- ========================
+  -- 📄 LaTeX
+  -- ========================
   {
     "lervag/vimtex",
     ft = "tex",
     config = function()
-      -- Configuración básica de vimtex
       vim.g.vimtex_view_method = 'zathura'
       vim.g.vimtex_compiler_method = 'latexmk'
       vim.g.vimtex_quickfix_mode = 0
       vim.g.tex_flavor = 'latex'
     end,
   },
+
+
 }

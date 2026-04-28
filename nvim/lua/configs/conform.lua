@@ -1,4 +1,4 @@
-local options = {
+return {
   formatters_by_ft = {
     lua = { "stylua" },
     css = { "prettier" },
@@ -7,14 +7,10 @@ local options = {
     haskell = { "fourmolu" },
     c = { "clang-format" },
     cpp = { "clang-format" },
-    java = { "google-java-format" }, 
+    java = { "google-java-format" },
   },
-
-  -- format_on_save = {
-  --   -- These options will be passed to conform.format()
-  --   timeout_ms = 500,
-  --   lsp_fallback = true,
-  -- },
+  format_on_save = {
+    timeout_ms = 500,
+    lsp_fallback = false,
+  },
 }
-
-return options
