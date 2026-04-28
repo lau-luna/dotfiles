@@ -128,9 +128,6 @@ return {
     end,
     config = function()
       require("live_server").setup({})
-
-      vim.keymap.set('n', '<leader>ll', ':LiveServerStart<CR>', { noremap = true, silent = true })
-      vim.keymap.set('n', '<leader>lq', ':LiveServerStop<CR>', { noremap = true, silent = true })
     end,
   },
 
@@ -147,6 +144,5 @@ return {
       vim.g.tex_flavor = 'latex'
     end,
   },
-
 
 }
